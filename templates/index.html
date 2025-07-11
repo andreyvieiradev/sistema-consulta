@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordens de Produção | Hiwston Tecnologia</title>
+    <link rel="icon" href="{{ url_for('static', filename='icon.ico') }}" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .loader {
+            border-top-color: #3498db;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .toast-in {
+            animation: slideIn 0.5s ease-out forwards;
+        }
+        .toast-out {
+            animation: slideOut 0.5s ease-in forwards;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        .modal-overlay { transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease; }
+        .table-row-clickable { cursor: pointer; }
+        .component-item:hover { background-color: #f0f0f0; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-3"></div>
+
+    <div id="initial-choice-view" class="flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded-xl border border-gray-200 shadow-lg w-full max-w-md text-center">
+             <div class="flex justify-center mb-6">
+                <img src="{{ url_for('static', filename='logo2.png') }}" alt="Logótipo da Empresa" class="h-auto max-w-xs">
+            </div>
+            <h1 class="text-2xl font-bold text-gray-700 mb-6">Selecione o tipo de acesso</h1>
+            <div class="space-y-4">
+                 <button id="showOperatorLoginBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-md transition-colors text-lg">
+                    Login de Operador
+                </button>
+                 <button id="showAdminLoginBtn" class="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 px-4 rounded-md transition-colors text-lg">
+                    Login de Admin
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="operator-login-view" class="hidden flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded-xl border border-gray-200 shadow-lg w-full max-w-md">
+            <h1 class="text-2xl font-bold text-gray-700 mb-2 text-center">Acesso do Operador</h1>
+            <p class="text-gray-500 mb-6 text-center">Por favor, selecione o seu setor para continuar.</p>
+            <div class="mb-4">
+                <label for="loginSetor" class="block text-sm font-medium text-gray-600 mb-1">Setor de Trabalho:</label>
+                <select id="loginSetor" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md">
+                    <option value="" disabled selected>-- Escolha um setor --</option>
+                    <option value="CORTE.PLASMA">CORTE PLASMA</option>
+                    <option value="ACABAMENTO">ACABAMENTO</option>
+                    <option value="CORTE.GUILHOTINA">CORTE GUILHOTINA</option>
+                    <option value="DOBRA">DOBRA</option>
+                    <option value="FURACAO">FURAÇÃO</option>
+                    <option value="LIMPEZA">LIMPEZA</option>
+                    <option value="MONT.ELETRICA">MONTAGEM ELÉTRICA</option>
+                    <option value="MONT.HIDRAULICA">MONTAGEM HIDRÁULICA</option>
+                    <option value="MONT.MECANICA">MONTAGEM MECÂNICA</option>
+                    <option value="MONT.PNEUMATICA">MONTAGEM PNEUMÁTICA</option>
+                    <option value="POLICORTE">POLICORTE</option>
+                    <option value="SOLDAGEM">SOLDAGEM</option>
+                    <option value="USINAGEM">USINAGEM</option>
+                </select>
+            </div>
+            <button id="operatorLoginBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition-colors">
+                Entrar
+            </button>
+        </div>
+    </div>
+    
+    <div id="admin-login-view" class="hidden flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded-xl border border-gray-200 shadow-lg w-full max-w-md">
+            <h1 class="text-2xl font-bold text-gray-700 mb-2 text-center">Acesso de Administrador</h1>
+            <p class="text-gray-500 mb-6 text-center">Insira as suas credenciais.</p>
+            <div class="space-y-4">
+                 <div>
+                    <label for="username" class="block text-sm font-medium text-gray-600">Utilizador</label>
+                    <input type="text" id="username" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-600">Palavra-passe</label>
+                    <input type="password" id="password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm">
+                </div>
+            </div>
+             <button id="adminLoginBtn" class="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition-colors">
+                Entrar
+            </button>
+        </div>
+    </div>
+
+    <div id="main-view" class="container mx-auto p-4 sm:p-6 lg:p-8 hidden">
+        
+        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm mb-6">
+            <div class="flex justify-between items-start">
+                 <h2 class="text-lg font-semibold text-gray-700 mb-3">Filtros de Consulta</h2>
+                 <div class="flex items-center space-x-4">
+                    <button id="fullscreenBtn" title="Modo Tela Cheia" class="text-gray-500 hover:text-gray-800">
+                        <svg id="icon-expand" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
+                        </svg>
+                        <svg id="icon-compress" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </button>
+                    <button id="logoutBtn" class="text-sm text-red-600 hover:text-red-800 font-semibold">Sair</button>
+                 </div>
+            </div>
+            <div class="flex items-end space-x-4 justify-between mt-2">
+                <div class="flex items-end space-x-4">
+                    <div>
+                        <label for="setor" class="block text-sm font-medium text-gray-600">Setor:</label>
+                        <select id="setor" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md">
+                            <option value="CORTE.PLASMA">CORTE PLASMA</option>
+                            <option value="ACABAMENTO">ACABAMENTO</option>
+                            <option value="CORTE.GUILHOTINA">CORTE GUILHOTINA</option>
+                            <option value="DOBRA">DOBRA</option>
+                            <option value="FURACAO">FURAÇÃO</option>
+                            <option value="LIMPEZA">LIMPEZA</option>
+                            <option value="MONT.ELETRICA">MONTAGEM ELÉTRICA</option>
+                            <option value="MONT.HIDRAULICA">MONTAGEM HIDRÁULICA</option>
+                            <option value="MONT.MECANICA">MONTAGEM MECÂNICA</option>
+                            <option value="MONT.PNEUMATICA">MONTAGEM PNEUMÁTICA</option>
+                            <option value="POLICORTE">POLICORTE</option>
+                            <option value="SOLDAGEM">SOLDAGEM</option>
+                            <option value="USINAGEM">USINAGEM</option>
+                        </select>
+                    </div>
+                    <div id="admin-filters" class="hidden">
+                        <label for="estado" class="block text-sm font-medium text-gray-600">Estado da Ordem:</label>
+                        <select id="estado" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md">
+                            <option value="A_PRODUZIR">A Produzir</option>
+                            <option value="TODAS">Todas</option>
+                            <option value="FECHADA">Fechada</option>
+                            <option value="SUGERIDA">Sugerida</option>
+                            <option value="CANCELADA">Cancelada</option>
+                        </select>
+                    </div>
+                    <button id="consultarBtn" class="h-10 px-4 flex items-center bg-green-600 hover:bg-green-700 text-white font-bold rounded-md self-end">
+                        Consultar
+                    </button>
+                    <button id="exportBtn" title="Exportar para CSV" class="h-10 w-10 flex items-center justify-center bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-md self-end disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                           <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="flex items-end space-x-4">
+                    <div class="relative">
+                         <label for="searchInput" class="block text-sm font-medium text-gray-600">Pesquisa Rápida:</label>
+                        <input type="text" id="searchInput" placeholder="Pesquisar em todas as colunas..." class="mt-1 block w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500">
+                        <div class="absolute inset-y-0 left-0 pl-3 pt-5 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="autoRefresh" class="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500">
+                        <label for="autoRefresh" class="text-sm font-medium text-gray-600">Atualização automática</label>
+                        <span id="refresh-timer" class="hidden text-sm text-gray-500 ml-2 font-mono bg-gray-100 px-2 py-1 rounded"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <div class="bg-red-600 text-white p-4">
+                <h1 class="text-xl font-bold">Ordens de Produção</h1>
+            </div>
+            <div id="table-container" class="p-4">
+                 <div id="loader" class="flex justify-center items-center h-64">
+                    <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+                 </div>
+                <div id="error-message" class="hidden text-center p-8 text-red-500 bg-red-50 rounded-lg">
+                    <h3 class="font-semibold text-lg">Ocorreu um erro</h3>
+                    <pre id="error-text" class="mt-2 text-left bg-gray-100 p-3 rounded font-mono text-xs break-words"></pre>
+                </div>
+                <div id="data-table" class="hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nº Ordem</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cód. Item</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição do Item</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qtde</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prazo</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Entrega</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div id="pagination" class="hidden p-4 bg-gray-50 border-t border-gray-200 flex items-center justify-center space-x-2 sm:space-x-4 flex-wrap">
+                 <button id="prevPage" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    &laquo; Anterior
+                </button>
+                <span id="page-info" class="text-sm text-gray-600 order-first w-full text-center mb-2 sm:order-none sm:w-auto sm:mb-0">Página 1 de 1</span>
+                <button id="nextPage" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Próxima &raquo;
+                </button>
+                <div class="flex items-center space-x-2 ml-4">
+                    <input type="number" id="pageInput" class="w-20 pl-3 pr-1 py-2 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md" min="1" placeholder="Página...">
+                    <button id="goToPageBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md">
+                        Ir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="detalhes-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-40 modal-overlay">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl transform modal-content">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 id="modal-title" class="text-xl font-semibold text-gray-800">Detalhes da Ordem de Produção</h3>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="detalhes-modal-content" class="p-6 max-h-[70vh] overflow-y-auto">
+                <!-- Conteúdo do modal -->
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const REGISTROS_POR_PAGINA = 50;
+            let currentPage = 1;
+            let totalPages = 1;
+            let isAdmin = false; 
+            let refreshIntervalId = null;
+            const REFRESH_INTERVAL_SECONDS = 60;
+            let countdown = REFRESH_INTERVAL_SECONDS;
+
+            const toastContainer = document.getElementById('toast-container');
+            const initialChoiceView = document.getElementById('initial-choice-view');
+            const operatorLoginView = document.getElementById('operator-login-view');
+            const adminLoginView = document.getElementById('admin-login-view');
+            const mainView = document.getElementById('main-view');
+            const showOperatorLoginBtn = document.getElementById('showOperatorLoginBtn');
+            const showAdminLoginBtn = document.getElementById('showAdminLoginBtn');
+            const loginSetorSelect = document.getElementById('loginSetor');
+            const operatorLoginBtn = document.getElementById('operatorLoginBtn');
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const adminLoginBtn = document.getElementById('adminLoginBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const setorSelect = document.getElementById('setor');
+            const adminFiltersDiv = document.getElementById('admin-filters');
+            const estadoSelect = document.getElementById('estado');
+            const loader = document.getElementById('loader');
+            const dataTable = document.getElementById('data-table');
+            const tableBody = document.getElementById('table-body');
+            const paginationControls = document.getElementById('pagination');
+            const prevPageBtn = document.getElementById('prevPage');
+            const nextPageBtn = document.getElementById('nextPage');
+            const pageInfoSpan = document.getElementById('page-info');
+            const errorText = document.getElementById('error-text');
+            const consultarBtn = document.getElementById('consultarBtn');
+            const pageInput = document.getElementById('pageInput');
+            const goToPageBtn = document.getElementById('goToPageBtn');
+            const autoRefreshCheckbox = document.getElementById('autoRefresh');
+            const refreshTimerSpan = document.getElementById('refresh-timer');
+            const exportBtn = document.getElementById('exportBtn');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const iconExpand = document.getElementById('icon-expand');
+            const iconCompress = document.getElementById('icon-compress');
+            const searchInput = document.getElementById('searchInput');
+            const detalhesModal = document.getElementById('detalhes-modal');
+            const detalhesModalContent = document.getElementById('detalhes-modal-content');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            
+            function showToast(message, type = 'info') {
+                if (!toastContainer) return;
+                const toast = document.createElement('div');
+                let bgColor, iconSvg;
+                switch(type) {
+                    case 'error': bgColor = 'bg-red-500'; iconSvg = `<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`; break;
+                    case 'warning': bgColor = 'bg-yellow-400'; iconSvg = `<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`; break;
+                    default: bgColor = 'bg-blue-500'; iconSvg = `<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                }
+                toast.className = `flex items-center text-white p-4 rounded-lg shadow-lg max-w-sm toast-in ${bgColor}`;
+                toast.innerHTML = `${iconSvg}<span>${message}</span>`;
+                toastContainer.appendChild(toast);
+                setTimeout(() => {
+                    toast.classList.remove('toast-in');
+                    toast.classList.add('toast-out');
+                    toast.addEventListener('animationend', () => toast.remove());
+                }, 3000);
+            }
+
+            async function fetchData(pagina) {
+                searchInput.value = '';
+                if (autoRefreshCheckbox.checked) countdown = REFRESH_INTERVAL_SECONDS;
+                showLoading();
+                const setor = setorSelect.value;
+                const estado = estadoSelect.value;
+                let apiUrl = `/api/ordens?page=${pagina}`;
+                if (setor) apiUrl += `&setor=${encodeURIComponent(setor)}`;
+                if (isAdmin) apiUrl += `&estado=${encodeURIComponent(estado)}`;
+                try {
+                    const response = await fetch(apiUrl);
+                    if (!response.ok) {
+                        let errorMsg = `Erro ${response.status}: ${response.statusText}`;
+                        try { const errorData = await response.json(); errorMsg = errorData.details ? JSON.stringify(JSON.parse(errorData.details), null, 2) : JSON.stringify(errorData, null, 2); } catch (e) { errorMsg = await response.text(); }
+                        throw new Error(errorMsg);
+                    }
+                    const resultado = await response.json();
+                    if (resultado.errors) throw new Error(`Erro na API GraphQL:\n${JSON.stringify(resultado.errors, null, 2)}`);
+                    const data = resultado.data.ordensDeProducao;
+                    renderTable(data.items);
+                    updatePagination(data.totalCount, pagina);
+                    showTable();
+                } catch (error) {
+                    console.error('Falha ao buscar dados:', error);
+                    showError(error.message);
+                }
+            }
+            
+            async function fetchOrdemDetalhes(opNumero, itemCode) {
+                detalhesModalContent.innerHTML = '<div class="flex justify-center items-center h-48"><div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div></div>';
+                detalhesModal.classList.remove('hidden');
+                try {
+                    const response = await fetch(`/api/ordem-detalhes/${opNumero}`);
+                    if (!response.ok) throw new Error('Não foi possível carregar os detalhes da ordem.');
+                    const detalhes = await response.json();
+                    
+                    if (itemCode && itemCode.startsWith('200')) {
+                        renderDetalhesSubMontagem(detalhes);
+                    } else {
+                        renderDetalhesPecaNormal(detalhes);
+                    }
+                } catch (error) {
+                    console.error("Erro ao buscar detalhes:", error);
+                    detalhesModalContent.innerHTML = `<p class="text-red-500 text-center">${error.message}</p>`;
+                }
+            }
+
+            function renderDetalhesPecaNormal(data) {
+                const operacoesHtml = data.operacoes?.items?.map(op => {
+                    const estado = op.estado || 'PENDENTE';
+                    const estadoClass = getStatusClass(estado);
+                    return `
+                        <li class="flex justify-between items-center py-2 px-3 rounded bg-gray-100">
+                            <span>${op.centroDeTrabalho?.descricao || 'N/D'}</span>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${estadoClass}">${estado.replace(/_/g, ' ')}</span>
+                        </li>
+                    `;
+                }).join('') || '<li>Nenhum roteiro para esta ordem.</li>';
+
+                detalhesModalContent.innerHTML = `
+                     <div class="space-y-4">
+                        <div>
+                            <h4 class="font-bold text-lg">${data.numero} - ${data.item?.descricao || ''}</h4>
+                            <p class="text-sm text-gray-600">${data.item?.codigo || ''}</p>
+                        </div>
+                        <div>
+                            <h5 class="font-semibold mb-2">Roteiro de Produção</h5>
+                            <ul class="space-y-2">${operacoesHtml}</ul>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function renderDetalhesSubMontagem(data) {
+                const insumosHtml = data.componentes?.map(insumo => {
+                    const estado = insumo.estadoProducao || 'N/A';
+                    const estadoClass = getStatusClass(estado);
+                    return `
+                    <li class="component-item p-2 rounded cursor-pointer transition-colors" data-item-code="${insumo.item.codigo}">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-semibold">${insumo.item.descricao}</p>
+                                <p class="text-sm text-gray-500">${insumo.item.codigo} | Qtd: ${insumo.quantidadeNecessaria}</p>
+                            </div>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${estadoClass}">
+                                ${estado.replace(/_/g, ' ')}
+                            </span>
+                        </div>
+                    </li>
+                `}).join('') || '<li>Nenhum componente encontrado.</li>';
+
+                detalhesModalContent.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-bold text-lg">${data.numero} - ${data.item?.descricao || ''}</h4>
+                            <p class="text-sm text-gray-600">${data.item?.codigo || ''}</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h5 class="font-semibold mb-2">Componentes da Montagem</h5>
+                                <ul id="component-list" class="divide-y divide-gray-200 border rounded-md p-2 max-h-96 overflow-y-auto">${insumosHtml}</ul>
+                            </div>
+                            <div id="roteiro-panel" class="p-2 bg-gray-50 rounded-md">
+                                <h5 class="font-semibold mb-2">Roteiro do Componente</h5>
+                                <div id="roteiro-content" class="text-center text-gray-500 pt-16">
+                                    Selecione um componente à esquerda para ver o seu roteiro.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('component-list').addEventListener('click', async (event) => {
+                    const componentLi = event.target.closest('.component-item');
+                    if(componentLi && componentLi.dataset.itemCode) {
+                        document.querySelectorAll('.component-item').forEach(el => el.classList.remove('bg-blue-100'));
+                        componentLi.classList.add('bg-blue-100');
+                        await fetchAndRenderRoteiro(componentLi.dataset.itemCode);
+                    }
+                });
+            }
+            
+            async function fetchAndRenderRoteiro(itemCode) {
+                const roteiroContent = document.getElementById('roteiro-content');
+                roteiroContent.innerHTML = '<div class="flex justify-center items-center h-48"><div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-8 w-8"></div></div>';
+                try {
+                    const response = await fetch(`/api/roteiro-item/${itemCode}`);
+                    if (!response.ok) throw new Error('Falha ao buscar roteiro.');
+                    const data = await response.json();
+                    
+                    const roteirosHtml = data.operacoes?.items?.map(op => {
+                        const estado = op.estado || 'PENDENTE';
+                        const estadoClass = getStatusClass(estado);
+                        return `
+                            <li class="flex justify-between items-center py-2 px-3 rounded bg-white">
+                                <span>${op.centroDeTrabalho.descricao}</span>
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${estadoClass}">${estado.replace(/_/g, ' ')}</span>
+                            </li>
+                        `}).join('') || '<li>Nenhum roteiro definido para este item.</li>';
+
+                    roteiroContent.innerHTML = `<ul class="space-y-2">${roteirosHtml}</ul>`;
+
+                } catch (error) {
+                    roteiroContent.innerHTML = `<p class="text-red-500">${error.message}</p>`;
+                }
+            }
+
+            function getStatusClass(estado) {
+                switch (estado) {
+                    case 'A_PRODUZIR': return 'bg-green-100 text-green-800';
+                    case 'CONCLUIDA': return 'bg-blue-100 text-blue-800';
+                    case 'FECHADA': return 'bg-gray-400 text-white';
+                    case 'SUGERIDA': return 'bg-yellow-100 text-yellow-800';
+                    case 'CANCELADA': return 'bg-red-100 text-red-800';
+                    default: return 'bg-gray-100 text-gray-800';
+                }
+            }
+
+            function getPrazoStatus(dataString) {
+                if (!dataString) return { text: 'N/D', class: 'bg-gray-100 text-gray-800' };
+                const hoje = new Date();
+                hoje.setHours(0, 0, 0, 0); 
+                const dataEntrega = new Date(dataString);
+                dataEntrega.setHours(0, 0, 0, 0);
+                const diffTime = dataEntrega.getTime() - hoje.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays < 0) return { text: 'ATRASADO', class: 'bg-red-100 text-red-800' };
+                if (diffDays <= 3) return { text: 'URGENCIA', class: 'bg-yellow-100 text-yellow-800' };
+                return { text: 'DENTRO DO PRAZO', class: 'bg-blue-100 text-blue-800' };
+            }
+
+            function renderTable(items) {
+                tableBody.innerHTML = '';
+                exportBtn.disabled = !items || items.length === 0;
+                if (!items || items.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-500">Nenhum registo encontrado para os filtros selecionados.</td></tr>';
+                    return;
+                }
+                items.forEach(ordem => {
+                    const dataEntrega = ordem.necessidadeData ? new Date(ordem.necessidadeData).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A';
+                    const statusClass = getStatusClass(ordem.estado);
+                    const statusTexto = ordem.estado || 'N/D';
+                    const prazo = getPrazoStatus(ordem.necessidadeData);
+                    const row = `
+                        <tr class="table-row-clickable hover:bg-gray-100" data-op-numero="${ordem.numero}" data-item-code="${ordem.item?.codigo || ''}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${ordem.numero || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${ordem.item?.codigo || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-normal text-sm text-gray-500">${ordem.item?.descricao || 'N/A'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${ordem.quantidade || 0}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${statusTexto.replace(/_/g, ' ')}</span></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${prazo.class}">${prazo.text}</span></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${dataEntrega}</td>
+                        </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            }
+            
+            function updatePagination(totalCount, pagina) {
+                totalPages = Math.ceil(totalCount / REGISTROS_POR_PAGINA);
+                pageInfoSpan.textContent = `Página ${pagina} de ${totalPages}`;
+                prevPageBtn.disabled = pagina <= 1;
+                nextPageBtn.disabled = pagina >= totalPages;
+                currentPage = pagina;
+                pageInput.value = '';
+                pageInput.placeholder = `Pág. ${pagina}`;
+                pageInput.max = totalPages;
+            }
+
+            function showLoading() {
+                loader.classList.remove('hidden');
+                dataTable.classList.add('hidden');
+                document.getElementById('error-message').classList.add('hidden');
+                paginationControls.classList.add('hidden');
+                exportBtn.disabled = true;
+            }
+
+            function showTable() {
+                loader.classList.add('hidden');
+                dataTable.classList.remove('hidden');
+                paginationControls.classList.remove('hidden');
+            }
+
+            function showError(message) {
+                showToast(message, 'error');
+                loader.classList.add('hidden');
+            }
+            
+            function goToPage() {
+                const pageNum = parseInt(pageInput.value, 10);
+                if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
+                    showToast(`Página inválida. Por favor, insira um valor entre 1 e ${totalPages}.`, 'warning');
+                    pageInput.value = '';
+                    return;
+                }
+                fetchData(pageNum);
+            }
+            
+            function startAutoRefresh() {
+                if (refreshIntervalId) { clearInterval(refreshIntervalId); }
+                refreshTimerSpan.classList.remove('hidden');
+                countdown = REFRESH_INTERVAL_SECONDS;
+                refreshIntervalId = setInterval(() => {
+                    countdown--;
+                    refreshTimerSpan.textContent = `(${countdown}s)`;
+                    if (countdown <= 0) {
+                        fetchData(currentPage);
+                        countdown = REFRESH_INTERVAL_SECONDS;
+                    }
+                }, 1000);
+            }
+
+            function stopAutoRefresh() {
+                clearInterval(refreshIntervalId);
+                refreshIntervalId = null;
+                refreshTimerSpan.classList.add('hidden');
+            }
+
+            function doLogout() {
+                mainView.classList.add('hidden');
+                operatorLoginView.classList.add('hidden');
+                adminLoginView.classList.add('hidden');
+                initialChoiceView.classList.remove('hidden');
+                isAdmin = false;
+                stopAutoRefresh();
+                autoRefreshCheckbox.checked = false;
+                adminFiltersDiv.classList.add('hidden');
+            }
+
+            function exportToCSV() {
+                const BOM = "\uFEFF";
+                let csvContent = BOM;
+                const table = document.querySelector("#data-table table");
+                const headers = Array.from(table.querySelectorAll("thead th")).map(th => `"${th.innerText}"`).join(';');
+                csvContent += headers + '\r\n';
+                table.querySelectorAll("tbody tr").forEach(tr => {
+                    const cells = Array.from(tr.querySelectorAll("td")).map(td => `"${td.innerText.replace(/"/g, '""')}"`);
+                    csvContent += cells.join(';') + '\r\n';
+                });
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                const dataAtual = new Date().toISOString().slice(0, 10);
+                link.setAttribute("download", `ordens_producao_${setorSelect.value}_${dataAtual}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            function toggleFullScreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        showToast(`Erro ao entrar em tela cheia: ${err.message}`, 'error');
+                    });
+                } else {
+                  if (document.exitFullscreen) {
+                    document.exitFullscreen(); 
+                  }
+                }
+            }
+
+            function filterTable() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const tableRows = document.querySelectorAll("#table-body tr");
+                
+                tableRows.forEach(row => {
+                    if (row.querySelector('td[colspan]')) return;
+                    const rowText = row.textContent.toLowerCase();
+                    if (rowText.includes(searchTerm)) {
+                        row.style.display = "";
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+            }
+
+            // --- Event Listeners ---
+            showOperatorLoginBtn.addEventListener('click', () => {
+                initialChoiceView.classList.add('hidden');
+                operatorLoginView.classList.remove('hidden');
+            });
+
+            showAdminLoginBtn.addEventListener('click', () => {
+                initialChoiceView.classList.add('hidden');
+                adminLoginView.classList.remove('hidden');
+            });
+
+            operatorLoginBtn.addEventListener('click', () => {
+                const setorSelecionado = loginSetorSelect.value;
+                if (!setorSelecionado) {
+                    showToast('Por favor, escolha um setor para continuar.', 'warning');
+                    return;
+                }
+                operatorLoginView.classList.add('hidden');
+                mainView.classList.remove('hidden');
+                setorSelect.value = setorSelecionado;
+                isAdmin = false;
+                adminFiltersDiv.classList.add('hidden');
+                fetchData(1);
+            });
+
+            adminLoginBtn.addEventListener('click', () => {
+                if (usernameInput.value === 'pcp' && passwordInput.value === 'pcp') {
+                    adminLoginView.classList.add('hidden');
+                    mainView.classList.remove('hidden');
+                    adminFiltersDiv.classList.remove('hidden'); 
+                    isAdmin = true;
+                    fetchData(1);
+                } else {
+                    showToast('Utilizador ou palavra-passe incorretos.', 'error');
+                }
+            });
+
+            logoutBtn.addEventListener('click', doLogout);
+            prevPageBtn.addEventListener('click', () => { if (currentPage > 1) fetchData(currentPage - 1); });
+            nextPageBtn.addEventListener('click', () => { if (currentPage < totalPages) fetchData(currentPage + 1); });
+            consultarBtn.addEventListener('click', () => { fetchData(1); });
+            exportBtn.addEventListener('click', exportToCSV);
+            goToPageBtn.addEventListener('click', goToPage);
+            pageInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') goToPage(); });
+            autoRefreshCheckbox.addEventListener('change', () => {
+                if (autoRefreshCheckbox.checked) { startAutoRefresh(); } else { stopAutoRefresh(); }
+            });
+            fullscreenBtn.addEventListener('click', toggleFullScreen);
+            searchInput.addEventListener('input', filterTable);
+            document.addEventListener('fullscreenchange', () => {
+                if (document.fullscreenElement) {
+                    iconExpand.classList.add('hidden');
+                    iconCompress.classList.remove('hidden');
+                } else {
+                    iconExpand.classList.remove('hidden');
+                    iconCompress.classList.add('hidden');
+                }
+            });
+
+            tableBody.addEventListener('click', (event) => {
+                const row = event.target.closest('tr');
+                if (row && row.dataset.opNumero) {
+                    fetchOrdemDetalhes(row.dataset.opNumero, row.dataset.itemCode);
+                }
+            });
+
+            closeModalBtn.addEventListener('click', () => {
+                detalhesModal.classList.add('hidden');
+            });
+
+            detalhesModal.addEventListener('click', (event) => {
+                if(event.target === detalhesModal) {
+                    detalhesModal.classList.add('hidden');
+                }
+            });
+
+            window.addEventListener('beforeunload', function(event) {
+                navigator.sendBeacon('/shutdown', new Blob());
+            });
+        });
+    </script>
+</body>
+</html>
