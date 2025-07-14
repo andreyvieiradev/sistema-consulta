@@ -7,7 +7,7 @@ from collections import Counter
 app = Flask(__name__)
 
 # --- CONFIGURAÇÕES DA API ---
-AUTH_TOKEN = 'tuPIiq0OnGoUcG2Qsd6N/tRwrd0O6+aV+l2ud5LBj9jAvZVZTjn0ebnHOqRZ5T/2VQLxw0TkGu81iD7kYRiBi4ypeXRtSKPFNPo2Hhb/Dm/rOTsk8jBPDCJq6+XpwZzP'
+AUTH_TOKEN = ''
 ENDPOINT_URL = 'https://api.maxiprod.com.br/graphql/'
 REGISTROS_POR_PAGINA = 50
 
