@@ -1,1 +1,1 @@
-Nesse projeto o objetivo era listar as ordens de produção do sistema ERP MaxiProd, listando as ordens com filtro por setor, além disso implementei novas informações como data de entrega e da prazo da ordem. Nesse projeto usei HTML, Tailwind CSS, JavaScript, Python e API GraphQL.
+ma aplicação web desenvolvida para agilizar e simplificar a consulta de ordens de produção do ERP MaxiProd. Utilizando Python, JavaScript e Tailwind CSS, a ferramenta substitui um processo manual demorado por uma busca instantânea com filtros por setor, otimizando a tomada de decisão na produção.
